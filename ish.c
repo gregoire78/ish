@@ -5,6 +5,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "tools.h"
+
 #define VERSION 0.33 /* A mettre a jour a chaque evolution */
 
 int RUN=1; /* RUN doit être mis a zero pour stopper le shell */
@@ -53,7 +55,7 @@ char *d;
    return 1; 
 }
 
-int commande_externe(char *c, char *p)
+void commande_externe(char *c, char *p)
 {
     printf("%s est une commande externe !\n",c);
 }
@@ -121,7 +123,7 @@ int main(int N, char *P[])
     fflush(stdout);
     /* lecture de la commande */
     if (lire_ligne(0,buf,LBUF) < 0)
-       printf("La taille de la ligne est limitee a %s car. !\n",LBUF);
+       printf("La taille de la ligne est limitee a %d car. !\n",LBUF);
     else traite_commande();
   }
   printf("Au revoir !\n");

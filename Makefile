@@ -5,7 +5,7 @@ tools.o : tools.c tools.h
 	cc -c tools.c 
 
 ish.o : ish.c tools.h
-	cc -c ish.c
+	cc -c -Wall ish.c
 
 #	cc -c -DDEBUG ish.c
 clean :
