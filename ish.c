@@ -7,7 +7,7 @@
 
 #include "tools.h"
 
-#define VERSION 0.33 /* A mettre a jour a chaque evolution */
+#define VERSION 0.34 /* A mettre a jour a chaque evolution */
 
 int RUN=1; /* RUN doit être mis a zero pour stopper le shell */
 
