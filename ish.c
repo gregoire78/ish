@@ -4,18 +4,39 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <ctype.h>
 
 #include "tools.h"
 
-#define VERSION 0.35 /* A mettre a jour a chaque evolution */
+#define VERSION 0.36 /* A mettre a jour a chaque evolution */
 
 int RUN=1; /* RUN doit être mis a zero pour stopper le shell */
 
 #define LBUF 512
 char buf[LBUF];
 
-extern char **environ;
+/* fonction d'assignement variable valeur */
+int enregistrer(char * e) {
+  char *cegal;
+  int i;
+  /* on cherche les caractere = */
+  if ((cegal=strchr(e,(int)'=')) == NULL) {
+       printf("Caractere = non trouve !\n");
+       return 1;
+  }
+  *cegal = '\0'; /* on delimite le nom de la variable */
+  cegal++; /* cegal pointe sur le debut de la valeur */
+  for(i=0;i<strlen(e);i++) e[i]=(char)toupper((int)e[i]);
+  if (setenv(e,cegal,1) == -1) perror("setenv");
+  return 0;
+}
 
+extern char **environ; /* var extern pour var d'env */
+/* la fonction qui liste les var d'env */
 void Liste_env(char *m)
 {
 char **Listenv;
@@ -27,7 +48,6 @@ char *Val;
          printf("%s=%s\n",*Listenv,Val);
       else printf("%s\n", *Listenv);
       Listenv++;
-
    }
 }
 
@@ -108,8 +128,28 @@ char *rep;
      if (chdir(rep) < 0) perror(rep);
      return 1;
   }
+  /* commande "env" */
   if (strcmp(c,"env") == 0) {
-    Liste_env("AVANT");
+    char *envval;
+    if (strlen(p) == 0) { /* sans parametre */
+      Liste_env("AVANT"); /* on liste les variables d'env */
+    } else { /* si on cherche la valeur d'une variable */
+      envval = getenv(p);
+      if (envval == 0) { /* on regarde si la variable existe */
+        printf("%s n'existe pas\n", p);
+      } else { /* si elle existe on affiche */
+        printf("%s=%s\n", p, envval);
+      }
+    }
+    return 1;
+  }
+  /* commande "set" enregistre une var d'env */
+  if (strcmp(c,"set") == 0) {
+    if (strlen(p) == 0) { /* sans parametre */
+      printf("utilisation : set var=val\n");
+    } else { /* on recupere le nom de variable */
+      enregistrer(p);
+    }
     return 1;
   }
   return 0;
