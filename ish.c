@@ -7,12 +7,29 @@
 
 #include "tools.h"
 
-#define VERSION 0.34 /* A mettre a jour a chaque evolution */
+#define VERSION 0.35 /* A mettre a jour a chaque evolution */
 
 int RUN=1; /* RUN doit être mis a zero pour stopper le shell */
 
 #define LBUF 512
 char buf[LBUF];
+
+extern char **environ;
+
+void Liste_env(char *m)
+{
+char **Listenv;
+char *Val;
+   Listenv = environ;
+   printf("Liste des variables de l'environnement %s\n",m);
+   while (*Listenv != NULL) {
+      if ((Val = getenv(*Listenv)) != NULL)
+         printf("%s=%s\n",*Listenv,Val);
+      else printf("%s\n", *Listenv);
+      Listenv++;
+
+   }
+}
 
 /* fonction qui determine si un caractere est un separateur */
 int is_sepa(char c)
@@ -90,6 +107,10 @@ char *rep;
      }
      if (chdir(rep) < 0) perror(rep);
      return 1;
+  }
+  if (strcmp(c,"env") == 0) {
+    Liste_env("AVANT");
+    return 1;
   }
   return 0;
 }
