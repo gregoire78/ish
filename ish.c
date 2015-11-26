@@ -12,15 +12,17 @@
 
 #include "tools.h"
 
-#define VERSION 0.36 /* A mettre a jour a chaque evolution */
+#define VERSION 0.37 /* A mettre a jour a chaque evolution */
 
 int RUN=1; /* RUN doit être mis a zero pour stopper le shell */
+static int redir[3];
 
 #define LBUF 512
 char buf[LBUF];
 
 /* fonction d'assignement variable valeur */
-int enregistrer(char * e) {
+int enregistrer(char * e) 
+{
   char *cegal;
   int i;
   /* on cherche les caractere = */
@@ -37,10 +39,10 @@ int enregistrer(char * e) {
 
 extern char **environ; /* var extern pour var d'env */
 /* la fonction qui liste les var d'env */
-void Liste_env(char *m)
+void Liste_env(char *m) 
 {
-char **Listenv;
-char *Val;
+  char **Listenv;
+  char *Val;
    Listenv = environ;
    printf("Liste des variables de l'environnement %s\n",m);
    while (*Listenv != NULL) {
@@ -51,12 +53,14 @@ char *Val;
    }
 }
 
+int is_pipe=0;
 /* fonction qui determine si un caractere est un separateur */
 int is_sepa(char c)
 {
-  if (c == ' ') return 1;
-  if (c == '\t') return 1;
-  if (c == '\n') return 1;
+  if (c == ' ') { is_pipe = 0; return 1; }
+  if (c == '\t') { is_pipe = 0; return 1; }
+  if (c == '\n') { is_pipe = 0; return 1; }
+  if (c == '|' ) { is_pipe = 1; return 1; }
   return 0;
 }
 
@@ -65,7 +69,7 @@ l'adresse du premier mot et dans suite l'adresse du debut de la suite */
 char * pmot, * suite;
 int premier_mot (char * b)
 {
-char *d;
+  char *d;
    d=b;
    /* on recherche le debut du premier mot */
    while (*d != '\0') {
@@ -89,19 +93,19 @@ char *d;
       d++;
    }
    suite = d;
-   return 1; 
+   return 1;
 }
 
 void commande_externe(char *c, char *p)
 {
-    printf("%s est une commande externe !\n",c);
+  printf("%s est une commande externe !\n",c);
 }
 
 /* cette fonction regarde si la commande c est interne et l'execute en 
    retournant VRAI sinon elle retourne FAUX */
 int commande_interne(char *c, char *p)
 {
-char *rep;
+  char *rep;
   /* cas le la commande interne exit */
   if (strcmp(c,"exit") == 0) {
      RUN=0;
@@ -128,6 +132,27 @@ char *rep;
      if (chdir(rep) < 0) perror(rep);
      return 1;
   }
+  /**/
+  if (is_pipe) {
+    printf("C'est un PIPE !!\n");
+    int pid, pid2, i, n;
+    int p1[2], p2[2], p3[2]; /* les pipes en variables globales */
+   /* creation des pipes */
+   if (pipe(p1) == -1) {
+      perror("pipe 1"); return 1;
+   }
+   if (pipe(p2) == -1) {
+      perror("pipe 2"); return 1;
+   }
+   if (pipe(p3) == -1) {
+      perror("pipe 3"); return 1;
+   }
+
+   if ((pid = fork()) == -1) {
+      perror("fork"); return -1;
+   }
+    return 1;
+  }
   /* commande "env" */
   if (strcmp(c,"env") == 0) {
     char *envval;
@@ -152,12 +177,13 @@ char *rep;
     }
     return 1;
   }
+  
   return 0;
 }
 
 void traite_commande(void)
 {
-char *comm, * param;
+  char *comm, * param;
   printf("Traitement de la commande : %s\n",buf);
   /* supprime les commentaires */
   
@@ -168,19 +194,19 @@ char *comm, * param;
      printf("La commande est <%s> le reste est <%s>\n",comm,param);
      /* si la commande est interne alors elle n'est pas externe !*/
      if (! commande_interne(comm,param)) commande_externe(comm,param);
-  } else printf("la commande est vide !\n");
+  }else printf("la commande est vide !\n");
 }
 
 int main(int N, char *P[])
 {
-
   /* initialisations diverses */
   signal(SIGINT, SIG_IGN); /* on ignore l'interruption du clavier */
 
   /* boucle principale */
   while (RUN) {
     /* affichage du prompt */
-    printf("ish> ");
+    char *rep = getcwd(NULL,0);
+    printf("$ish$ %s> ", rep);
     fflush(stdout);
     /* lecture de la commande */
     if (lire_ligne(0,buf,LBUF) < 0)
